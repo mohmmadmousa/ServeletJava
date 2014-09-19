@@ -1,0 +1,225 @@
+package com.Sample3.pkg;
+
+import java.io.*;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map; 
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+/**
+ * Servlet implementation class DBConnector
+ */
+public class DBConnector extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+	Connection con;
+	Statement st;
+	ResultSet rs;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public DBConnector() {
+        super();
+        try{
+			Class.forName("com.mysql.jdbc.Driver");
+			System.out.println("Driver found");
+		} 
+		catch (ClassNotFoundException e){
+			System.out.println("Driver not found");
+		}
+		
+		String url="jdbc:mysql://localhost:8889/ListTable";
+		String user="root";
+		String password="root"; 
+		try{ 
+			con=DriverManager.getConnection(url, user, password);
+			st= con.createStatement();
+			System.out.println("Connected Succesfully"); 
+		}
+		catch(SQLException e){
+			System.out.println("Wrong");
+		}
+	}
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		System.out.println("GET working");
+		DBConnector connect=new DBConnector();
+		Enumeration<String> parameterNames= request.getParameterNames();
+		PrintWriter out=response.getWriter();
+		String sa[]=new String[3];
+		int i=0;
+		PreparedStatement stmt = null;
+		String query=null;
+		while (parameterNames.hasMoreElements()) {
+			String paramName = parameterNames.nextElement();
+			String[] p =request.getParameterValues(paramName);
+			if(p.length>0){
+			}
+			sa[i]=p[0];
+			i++;
+		}
+		try{
+				stmt= con.prepareStatement("SELECT * FROM Items WHERE Item like ? or Code like ? or Colour like ?");
+				stmt.setString(1, (sa[1]+'%'));
+				stmt.setString(2, (sa[2]+'%'));
+				stmt.setString(3, (sa[0]+'%'));
+				System.out.println(stmt);
+				rs= stmt.executeQuery();
+
+		}
+		catch(SQLException e){
+			System.out.println(e);
+		}
+		try {
+			String Item;
+			String Code;
+			String Colour;
+			Map<String, String> map = new HashMap<String, String>();
+			JSONObject ja = new JSONObject();
+			JSONArray ar= new JSONArray();
+			while(rs.next()) {
+				Item = rs.getString("Item");
+				Code = rs.getString("Code");
+				Colour = rs.getString("Colour");
+				map.put("Item", Item);
+		        map.put("Code", Code);
+		        map.put("Colour", Colour);
+				JSONObject json = new JSONObject();
+		        json.accumulateAll(map);
+		        ar.add(json);
+				}
+				out.println(ar);
+				System.out.println(ar);
+		} catch (SQLException e) {
+			System.out.println(e);
+		}		
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		System.out.println("Posting");
+		DBConnector connect=new DBConnector();
+		PreparedStatement stmt = null;
+		PrintWriter out=response.getWriter();
+  
+		try {
+			String Item="",Code="",Colour="";
+			BufferedReader requestBodyInput = request.getReader();
+			String s=requestBodyInput.readLine();
+			System.out.println(s);
+			String sa[]=new String[3];
+			String copy="";
+			for(int i=0,count=0;i<s.length();i++){
+				if(s.charAt(i)=='/'){
+					sa[count]=copy;
+					count++;
+					i++;
+					copy="";
+				}
+				if(i>=s.length()){
+					break;
+				}
+				copy+=s.charAt(i);
+			}
+			System.out.print(sa[0]);
+			Item=sa[0];
+			Code=sa[1];
+			Colour=sa[2];	
+			stmt = con.prepareStatement("INSERT INTO Items (Item, Code, Colour) VALUES(?,?,?)");
+			stmt.setString(1, sa[0]);
+			stmt.setString(2, sa[1]);
+			stmt.setString(3, sa[2]);
+			stmt.executeUpdate(	);			
+		} catch (SQLException e) {
+			System.out.println(e);
+			out.println(e);
+		}		
+	}
+	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		System.out.println("Posting");
+		DBConnector connect=new DBConnector();
+		PreparedStatement stmt1 = null;
+		PreparedStatement stmt3 = null;
+		PreparedStatement stmt2 = null;
+		int rowsUpdated;
+		PrintWriter out=response.getWriter();
+  
+		try {
+			String Item="",Code="",Colour="";
+			BufferedReader requestBodyInput = request.getReader();
+			String s=requestBodyInput.readLine();
+			System.out.println(s);
+			String sa[]=new String[3];
+			String copy="";
+			for(int i=0,count=0;i<s.length();i++){
+				if(s.charAt(i)=='/'){
+					sa[count]=copy;
+					count++;
+					i++;
+					copy="";
+				}
+				if(i>=s.length()){
+					break;
+				}
+				copy+=s.charAt(i);
+			}
+			System.out.print(sa[0]);
+			Item=sa[0];
+			Code=sa[1];
+			Colour=sa[2];	
+			stmt1 = con.prepareStatement("UPDATE Items SET Item=?, Code=?, Colour=? WHERE Code=?");
+			stmt1.setString(1, sa[0]);
+			stmt1.setString(2, sa[1]);
+			stmt1.setString(3, sa[2]);
+			stmt1.setString(4, sa[1]);
+			rowsUpdated= stmt1.executeUpdate();
+			stmt2 = con.prepareStatement("UPDATE Items SET Item=?, Code=?, Colour=? WHERE Item=?");
+			stmt2.setString(1, sa[0]);
+			stmt2.setString(2, sa[1]);
+			stmt2.setString(3, sa[2]);
+			stmt2.setString(4, sa[0]);
+			rowsUpdated= stmt2.executeUpdate();
+			stmt3 = con.prepareStatement("UPDATE Items SET Item=?, Code=?, Colour=? WHERE Colour=?");
+			stmt3.setString(1, sa[0]);
+			stmt3.setString(2, sa[1]);
+			stmt3.setString(3, sa[2]);
+			stmt3.setString(4, sa[2]);
+			rowsUpdated= stmt3.executeUpdate();
+			if(rowsUpdated==0){
+			out.println("No Matches to Update");
+			}
+		} catch (SQLException e) {
+			System.out.println(e);
+			
+		}		
+	}
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		DBConnector connect=new DBConnector();
+		PrintWriter out=response.getWriter();
+		BufferedReader requestBodyInput = request.getReader();
+		String s=requestBodyInput.readLine();
+		System.out.println(s);
+		String SQL = "DELETE FROM Items WHERE Code = '"+s+"' ";
+		try {
+			st = con.createStatement();
+            st.executeUpdate(SQL);
+            }
+		catch (Exception e) {
+			
+		}
+	}
+}
+
